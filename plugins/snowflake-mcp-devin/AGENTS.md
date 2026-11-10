@@ -95,6 +95,16 @@ Snowflake enforces governance at the platform level. Never try to bypass it.
 - **Response truncation**: MCP responses are truncated at 250KB. Use `LIMIT`, aggregation, or narrower `SELECT` to stay under the limit.
 - **Object not found**: Check database/schema context. Suggest `SHOW TABLES LIKE '%name%'` to locate.
 
+## Partner attribution
+
+Snowflake attributes Devin's usage by the connection identifier `Cognition_Devin`. The MCP connection already sends it as the `User-Agent`. When you connect to Snowflake any other way, set it too:
+
+- REST calls (Cortex Agents, Analyst, Search, SQL API): header `User-Agent: Cognition_Devin`.
+- Python connector, Snowpark, and `snow` CLI connections: `application="Cognition_Devin"`.
+- JDBC/ODBC/other drivers: the driver's `application` parameter set to `Cognition_Devin`.
+
+Use the exact string; never add a version or suffix.
+
 ## Safety rules
 
 1. Default to **read-only** queries (SELECT, SHOW, DESCRIBE). Never run DDL or DML unless the user explicitly asks.
