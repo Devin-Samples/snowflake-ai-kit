@@ -17,28 +17,15 @@ import hosts
 import workloads
 from backend import BackendConfigError, resolve_backend, remote_routing_instruction
 
-# Keywords that strongly indicate Snowflake intent
+# Keywords that name Snowflake itself. Generic words such as "warehouse", "data quality"
+# or "show me my tables" are just as common for other databases, so they do not route.
 SNOWFLAKE_KEYWORDS = [
     r"\bsnowflake\b",
     r"\bcortex\b",
     r"\bsnowpark\b",
-    r"\bdynamic\s+table",
-    r"\bwarehouse\b",
     r"\bsnowsql\b",
-    r"\biceberg\s+table",
-    r"\bdata\s+quality\b",
-    r"\bdata\s+governance\b",
-    r"\bsemantic\s+view\b",
-    r"\bcortex\s+search\b",
-    r"\bcortex\s+analyst\b",
-    r"\bcortex\s+agent\b",
-    r"\bnative\s+app\b",
-    r"\bstreamlit\s+in\s+snowflake\b",
-    r"\bsnowflake\s+sql\b",
-    r"\bshow\s+(me\s+)?(my\s+)?.*\btables\b",
-    r"\bshow\s+(me\s+)?(my\s+)?.*\bdatabases\b",
-    r"\bshow\s+(me\s+)?(my\s+)?.*\bschemas\b",
-    r"\bshow\s+(me\s+)?(my\s+)?.*\bwarehouses\b",
+    r"\bsnowsight\b",
+    r"\bdynamic\s+tables?\b",
 ]
 
 # Keywords that indicate local/non-Snowflake work -- skip routing
@@ -135,10 +122,10 @@ def check_prompt(prompt: str, host=None) -> str | None:
         if workload is not workloads.GENERAL:
             return _backend_instruction(prompt, workload) or host.routing_instruction(root, workload)
 
-    # Check for Snowflake keywords
-    for pattern in COMPILED_SF:
-        if pattern.search(prompt):
-            return _backend_instruction(prompt) or host.routing_instruction(root)
+    # Route only when the prompt names Snowflake. A prompt about another platform
+    # (BigQuery, Postgres, ...) that does not mention Snowflake stays with the agent.
+    if any(pattern.search(prompt) for pattern in COMPILED_SF):
+        return _backend_instruction(prompt) or host.routing_instruction(root)
 
     return None
 

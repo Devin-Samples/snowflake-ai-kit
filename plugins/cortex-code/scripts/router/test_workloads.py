@@ -39,11 +39,13 @@ MIGRATION_PROMPTS = [
     ("what is the current state of my migration?", False, "claude", 0.5),
     ("run snowconvert on ./src", False, "claude", 0.5),
     ("/migrate deploy tables", False, "claude", 0.5),
-    ("decommission our Teradata data warehouse", True, "cortex", 1.0),
+    ("decommission our Teradata data warehouse", False, "claude", 0.5),
 ]
 
 NOT_MIGRATIONS = [
     "migrate my React app to Vite",
+    "migrate our MySQL db to Postgres",
+    "convert our Oracle schema to BigQuery",
     "convert this CSV to JSON",
     "move files to another folder",
     "fix the bug in oracle_client.py",

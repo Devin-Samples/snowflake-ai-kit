@@ -21,17 +21,17 @@ import workloads
 
 # Snowflake/Cortex indicators — strong indicators always count
 SNOWFLAKE_INDICATORS_STRONG = [
-    "snowflake", "cortex", "warehouse", "snowpark", "data warehouse",
+    "snowflake", "cortex", "snowpark", "snowsql", "snowsight",
     "cortex ai", "cortex search", "cortex analyst", "dynamic table",
     "snowflake database", "snowflake schema", "snowflake table",
-    "data governance", "data quality", "trust my data",
-    "ml function", "classification", "forecasting",
 ]
 
 # Contextual indicators — only count when a strong indicator is also present.
 # These are common English words that happen to also be Snowflake object types.
 SNOWFLAKE_INDICATORS_CONTEXTUAL = [
     "stream", "task", "stage", "pipe",
+    "warehouse", "data warehouse", "data governance", "data quality", "trust my data",
+    "ml function", "classification", "forecasting",
 ]
 
 # Non-Snowflake indicators (route to Claude Code)
@@ -39,6 +39,7 @@ CLAUDE_CODE_INDICATORS = [
     "local file", "git", "github", "commit", "push", "pull request",
     "python script", "javascript", "react", "frontend", "backend",
     "postgres", "mysql", "mongodb", "redis",
+    "bigquery", "databricks",
     "docker", "kubernetes", "infrastructure",
     "read file", "write file", "edit file", "create file"
 ]

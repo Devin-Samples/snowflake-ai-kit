@@ -40,6 +40,9 @@ def load_active_session() -> Optional[dict]:
     if not data.get("session_id"):
         return None
 
+    if data.get("cwd") != os.getcwd():
+        return None
+
     return data
 
 
@@ -48,7 +51,7 @@ def save_active_session(session_id: str) -> None:
     if not session_id:
         return
 
-    payload = {"session_id": session_id, "timestamp": time.time()}
+    payload = {"session_id": session_id, "timestamp": time.time(), "cwd": os.getcwd()}
     path = _state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
 

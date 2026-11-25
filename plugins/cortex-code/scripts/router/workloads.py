@@ -54,8 +54,26 @@ _MIGRATION_PATTERNS = [re.compile(p, re.IGNORECASE) for p in (
 )]
 
 
+# Platforms that are not Snowflake. Naming one as the target means the work is not for AIM.
+OTHER_PLATFORMS = _SOURCES + (
+    r"|aurora|cockroach\w*|mongo\w*|dynamo\w*|cassandra|clickhouse|duckdb|sqlite|"
+    r"databricks|fabric|athena|elasticsearch|supabase|planetscale"
+)
+_SNOWFLAKE = re.compile(r"\bsnowflake\b", re.IGNORECASE)
+_OTHER_TARGET = re.compile(rf"\b(?:to|into|onto|over\s+to)\s+(?:\w+\s+){{0,2}}(?:{OTHER_PLATFORMS})\b",
+                           re.IGNORECASE)
+
+
+def names_other_target(prompt: str) -> bool:
+    """True when the prompt moves work to a platform that is not Snowflake."""
+    prompt = prompt or ""
+    return not _SNOWFLAKE.search(prompt) and bool(_OTHER_TARGET.search(prompt))
+
+
 def classify(prompt: str) -> Workload:
     """Return MIGRATION when the prompt asks for a migration to Snowflake, else GENERAL."""
+    if names_other_target(prompt):
+        return GENERAL
     if any(p.search(prompt or "") for p in _MIGRATION_PATTERNS):
         return MIGRATION
     return GENERAL

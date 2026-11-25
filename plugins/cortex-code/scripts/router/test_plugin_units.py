@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import sys
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -148,9 +149,19 @@ def test_session_state():
         session_state.clear_active_session()
         results.append(expect("session: double-clear is safe", True, True))
 
+        session_state.save_active_session("project-a-session")
+        other_dir = Path(tempfile.mkdtemp(prefix="test_session_other_"))
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(other_dir)
+            result = session_state.load_active_session()
+            results.append(expect("session: another directory does not resume it", result, None))
+        finally:
+            os.chdir(original_cwd)
+            shutil.rmtree(other_dir, ignore_errors=True)
+
     finally:
         session_state.STATE_DIR = original_dir
-        import shutil
         shutil.rmtree(tmpdir, ignore_errors=True)
 
     return results
@@ -806,6 +817,37 @@ def test_invocation_source_env():
         "invocation_source: Codex -> 'Codex Plugin'",
         env_with_plugin_root.get("CORTEX_CODE_ENTRYPOINT"), "Codex Plugin"))
 
+    return results
+
+
+def test_failed_result_is_error():
+    """A `result` event with is_error or an error subtype fails the run (exit 1, audit error)."""
+    from unittest.mock import patch, MagicMock
+    import io
+    from execute_cortex import execute_cortex_streaming, result_error
+
+    results = []
+    failed = {"type": "result", "subtype": "error_during_execution", "is_error": True,
+              "errors": ["Cortex Code is not available for this account"]}
+    results.append(expect("result_error: success event", result_error({"type": "result", "subtype": "success", "result": "ok"}), None))
+    results.append(expect("result_error: error event names the error",
+                          "not available" in (result_error(failed) or ""), True))
+
+    def mock_popen(cmd, **kwargs):
+        process = MagicMock()
+        lines = [json.dumps({"type": "system", "subtype": "init", "session_id": "s1"}), json.dumps(failed)]
+        process.stdout = io.StringIO("\n".join(lines) + "\n")
+        process.stderr = io.StringIO("")
+        process.wait.return_value = 0
+        process.returncode = 0
+        return process
+
+    with patch("execute_cortex.check_cortex_cli", return_value=True), \
+         patch("execute_cortex.check_mcp_conflict", return_value=None), \
+         patch("execute_cortex.save_active_session"), \
+         patch("execute_cortex.subprocess.Popen", side_effect=mock_popen):
+        run = execute_cortex_streaming("list databases", envelope="RO")
+    results.append(expect("failed result: run reports an error", bool(run.get("error")), True))
     return results
 
 
@@ -1495,6 +1537,7 @@ def run_tests():
     all_results.extend(test_mcp_conflict_detection())
     all_results.extend(test_prompt_filter_mcp_hook())
     all_results.extend(test_invocation_source_env())
+    all_results.extend(test_failed_result_is_error())
     all_results.extend(test_codex_plugin_manifest())
     all_results.extend(test_codex_marketplace_json())
     all_results.extend(test_codex_hook_input_format())
